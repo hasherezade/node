@@ -4,6 +4,7 @@
 
 #include "src/snapshot/code-serializer.h"
 
+#include <iostream>
 #include <memory>
 
 #include "src/base/logging.h"
@@ -547,7 +548,14 @@ MaybeDirectHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
 
   Tagged<Script> script = Cast<Script>(result->script());
   script->set_deserialized(true);
+
+  std::cout << "\nStart SharedFunctionInfo\n";
+  result->SharedFunctionInfoPrint(std::cout);
+  std::cout << "\nEnd SharedFunctionInfo\n";
+  std::cout << std::flush;
+
   BaselineBatchCompileIfSparkplugCompiled(isolate, script);
+
   if (v8_flags.profile_deserialization) {
     double ms = timer.Elapsed().InMillisecondsF();
     int length = cached_data->length();
