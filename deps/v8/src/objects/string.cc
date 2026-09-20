@@ -606,13 +606,6 @@ void String::StringShortPrint(StringStream* accumulator) {
   accumulator->Add("<String[%u]: ", len);
   accumulator->Add(PrefixForDebugPrint());
 
-  if (len > kMaxShortPrintLength) {
-    accumulator->Add("...<truncated>>");
-    accumulator->Add(SuffixForDebugPrint());
-    accumulator->Put('>');
-    return;
-  }
-
   PrintUC16(accumulator, 0, len);
   accumulator->Add(SuffixForDebugPrint());
   accumulator->Put('>');
@@ -637,10 +630,16 @@ void String::PrintUC16(StringStream* accumulator, int start, int end) {
       accumulator->Add("\\r");
     } else if (c == '\\') {
       accumulator->Add("\\\\");
-    } else if (!std::isprint(c)) {
-      accumulator->Add("\\x%02x", c);
-    } else {
+    } else if (c >= 0x20 && c <= 0x7e) {
+      // StringCharacterStream yields UTF-16 code units. std::isprint() is
+      // defined only for EOF or values representable as unsigned char, so
+      // passing arbitrary uint16_t values is undefined behavior. Emit only
+      // printable ASCII directly and escape all other code units.
       accumulator->Put(static_cast<char>(c));
+    } else if (c <= 0xff) {
+      accumulator->Add("\\x%02x", static_cast<unsigned int>(c));
+    } else {
+      accumulator->Add("\\u%04x", static_cast<unsigned int>(c));
     }
   }
 }
